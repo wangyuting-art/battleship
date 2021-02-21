@@ -17,14 +17,20 @@ var view={
 
 var model={
     boardSize:7,
-    numShips:3,
+    numShips:1,
     shipsShunk:0,
     shipLength:3,
+    // ships:[
+    //     {locations:["06","16","26"],hits:["","",""]},
+    //     {locations:["24","34","44"],hits:["","",""]},
+    //     {locations:["10","11","12"],hits:["","",""]},
+    // ],
     ships:[
-        {locations:["06","16","26"],hits:["","",""]},
-        {locations:["24","34","44"],hits:["","",""]},
-        {locations:["10","11","12"],hits:["","",""]},
+        {locations:[0,0,0],hits:["","",""]},
+        {locations:[0,0,0],hits:["","",""]},
+        {locations:[0,0,0],hits:["","",""]},
     ],
+    
     fire:function(guess){
         for(var i=0;i<this.numShips;i++){
             var ship=this.ships[i];
@@ -34,6 +40,8 @@ var model={
                 view.displayHit(guess);
                 view.displayMessage("击中");
                 if(this.isShunk(ship)){
+                    this.shipsShunk++; 
+                    console.log(this.shipsShunk)       
                     view.displayMessage("你击沉一艘船");
                 }
                 return true;
@@ -44,29 +52,79 @@ var model={
         return false;
     },
     isShunk:function(ship){
-        for(var i=0;i<this.numShips;i++){
+        for(var i=0;i<this.shipLength;i++){
             if(ship.hits[i]!=="hit"){
                 return false;
             }
         }
         return true;
+    },
+    generateShipLocations:function(){
+        var locations;
+        for(var i=0;i<this.numShips;i++){
+            do{
+                locations=this.generateShip();
+            }while(this.collision(locations));
+            this.ships[i].locations=locations;
+           
+        } 
+        console.log(this.ships)
+    },
+    generateShip:function(){
+        var direction=Math.floor(Math.random()*2);
+        var row;
+        var col;
+        if(direction===1){//生成横、竖起始位置
+            row=Math.floor(Math.random()*this.boardSize);
+            col=Math.floor(Math.random()*(this.boardSize-this.shipLength));
+        }else{
+            row=Math.floor(Math.random()*(this.boardSize-this.shipLength));
+            col=Math.floor(Math.random()*this.boardSize);
+        }
+
+        var newShipLocation=[];
+        for(var i=0;i<this.shipLength;i++){
+            if(direction===1){
+                newShipLocation.push(row+""+(col+i));//变成字符串相加
+            }else{
+                newShipLocation.push((row+i)+""+col);
+            }
+        }
+        return newShipLocation;
+    },
+    collision:function(locations){
+        for(var i=0;i<this.numShips;i++){
+            var ship=this.ships[i];
+            for(var j=0;j<locations.length;j++){
+                if(ship.locations.indexOf(locations[j])>=0){
+                    return true;
+                }
+            }            
+        }
     }
 }
 
+
 var controller={
-    guesses=0,
+    guesses:0,
     processGuess:function(guess){
         var location=parseGuess(guess);
         if(location){//只要不反回null
             this.guesses++;
-            var hit=model.fire(location);
-            if(hit&&model.shipsShunk===model.numShips){
+            console.log("guess"+this.guesses);
+            
+            if(model.shipsShunk===model.numShips){
                 view.displayMessage("游戏结束，你成功击沉"+model.shipsShunk+"艘，共猜测"+this.guesses+"次");
+                return false;
+            }else{
+                var hit=model.fire(location);
             }
+            
         }
     },
 
 }
+
 function parseGuess(guess){
     var alphabet=["A","B","C","D","E","F","G"];
     if(guess===null||guess.length!==2){
@@ -105,7 +163,10 @@ window.onload=init;//网页加载完毕后执行
 function init(){
     var fireButton=document.getElementById("fireButton");
     fireButton.onclick=handleFireButton;
+
     var guessInput=document.getElementById("guessInput");
     guessInput.onkeypress=handleKeyPress;
+
+    model.generateShipLocations();
 }
 

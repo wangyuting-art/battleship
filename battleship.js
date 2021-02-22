@@ -17,19 +17,10 @@ var view={
 
 var model={
     boardSize:7,
-    numShips:1,
+    numShips:0,
     shipsShunk:0,
     shipLength:3,
-    // ships:[
-    //     {locations:["06","16","26"],hits:["","",""]},
-    //     {locations:["24","34","44"],hits:["","",""]},
-    //     {locations:["10","11","12"],hits:["","",""]},
-    // ],
-    ships:[
-        {locations:[0,0,0],hits:["","",""]},
-        {locations:[0,0,0],hits:["","",""]},
-        {locations:[0,0,0],hits:["","",""]},
-    ],
+    ships:[],
     
     fire:function(guess){
         for(var i=0;i<this.numShips;i++){
@@ -40,8 +31,7 @@ var model={
                 view.displayHit(guess);
                 view.displayMessage("击中");
                 if(this.isShunk(ship)){
-                    this.shipsShunk++; 
-                    console.log(this.shipsShunk)       
+                    this.shipsShunk++;
                     view.displayMessage("你击沉一艘船");
                 }
                 return true;
@@ -61,14 +51,20 @@ var model={
     },
     generateShipLocations:function(){
         var locations;
+        this.numShips = Math.floor(Math.random()*6)+1;
         for(var i=0;i<this.numShips;i++){
+        	var count = 60;
             do{
+            	count--;
                 locations=this.generateShip();
-            }while(this.collision(locations));
-            this.ships[i].locations=locations;
-           
-        } 
-        console.log(this.ships)
+            }while(this.collision(locations) && count > 0);
+            if (count <= 0) {
+            	this.numShips = this.ships.length;
+            	return;
+            }
+            this.ships.push({locations: locations, hits: ["", "", ""]});
+        }
+        console.log(this.ships);
     },
     generateShip:function(){
         var direction=Math.floor(Math.random()*2);
@@ -93,7 +89,7 @@ var model={
         return newShipLocation;
     },
     collision:function(locations){
-        for(var i=0;i<this.numShips;i++){
+        for(var i=0;i<this.ships.length;i++){
             var ship=this.ships[i];
             for(var j=0;j<locations.length;j++){
                 if(ship.locations.indexOf(locations[j])>=0){
@@ -112,14 +108,11 @@ var controller={
         if(location){//只要不反回null
             this.guesses++;
             console.log("guess"+this.guesses);
-            
+            var hit=model.fire(location);
             if(model.shipsShunk===model.numShips){
                 view.displayMessage("游戏结束，你成功击沉"+model.shipsShunk+"艘，共猜测"+this.guesses+"次");
                 return false;
-            }else{
-                var hit=model.fire(location);
             }
-            
         }
     },
 
